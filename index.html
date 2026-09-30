@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#0e0f11" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="德州助手" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<title>德州助手</title>
+<style>
+:root{--bg:#0e0f11;--panel:#17191d;--panel2:#202329;--text:#f5f7fa;--muted:#9ba3ad;--line:#2a2e35;--accent:#e8c76b;--green:#9ad29a}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+body{min-height:100vh}
+.app{max-width:560px;margin:0 auto;min-height:100vh;padding:max(14px,env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom))}
+.header{padding:8px 2px 10px;display:flex;align-items:flex-end;justify-content:space-between}
+h1{font-size:25px;margin:0}.ver{color:var(--muted);font-size:12px}
+.notice{margin:8px 0 14px;padding:9px 11px;border:1px solid var(--line);border-radius:12px;color:var(--muted);font-size:12px;line-height:1.5}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px}
+.card h2{font-size:15px;margin:0 0 12px}
+.row{display:flex;gap:10px;align-items:flex-start;margin:9px 0}
+.num{width:22px;height:22px;border-radius:7px;background:var(--panel2);display:grid;place-items:center;color:var(--accent);font-weight:700;font-size:12px;flex:none}
+.main{font-size:14px;line-height:1.55}.sub{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+.task{border-left:3px solid var(--accent);padding-left:10px;margin-top:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:16px;padding:17px 10px;font-size:16px;font-weight:650;text-align:left}
+.btn small{display:block;color:var(--muted);font-size:11px;font-weight:400;margin-top:5px;line-height:1.35}
+.btn.primary{grid-column:1/-1;background:#22251f;border-color:#484632}
+.counts{display:flex;gap:8px;margin:12px 0}.pill{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}.pill b{display:block;font-size:17px}.pill span{font-size:11px;color:var(--muted)}
+.screen{display:none}.screen.active{display:block}
+.back{border:0;background:none;color:var(--text);font-size:15px;padding:8px 0;margin-bottom:8px}
+label{display:block;font-size:12px;color:var(--muted);margin:12px 0 6px}
+input,textarea,select{width:100%;border:1px solid var(--line);border-radius:13px;background:#121418;color:var(--text);padding:12px;font-size:15px;outline:none}
+textarea{min-height:105px;resize:vertical}
+.save{width:100%;margin-top:14px;border:0;border-radius:14px;background:var(--accent);color:#17130a;font-size:16px;font-weight:750;padding:14px}
+.ghost{width:100%;margin-top:9px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);font-size:14px;padding:12px}
+.item{padding:11px 0;border-bottom:1px solid var(--line)}.item:last-child{border-bottom:0}.item .t{font-size:14px}.item .m{font-size:11px;color:var(--muted);margin-top:4px}
+.brief{font-size:15px;line-height:1.7}.brief strong{color:var(--accent)}
+.tabs{display:flex;gap:8px;margin:0 0 12px}.tab{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:9px;border-radius:12px;font-size:12px}.tab.active{color:var(--text);border-color:#5a543a}
+.badge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 8px;font-size:11px;color:var(--muted);margin:2px 4px 2px 0}
+.footer{color:var(--muted);font-size:11px;text-align:center;padding:18px 0}
+</style>
+</head>
+<body>
+<div class="app">
+<section id="home" class="screen active">
+  <div class="header"><h1>德州助手</h1><div class="ver">V0.2 · PWA</div></div>
+  <div class="notice">训练 / 赛后复盘用途。牌局进行中的决策只记录，不提供实时 call / fold / raise 建议。</div>
+
+  <div class="card">
+    <h2>当前策略卡</h2>
+    <div id="strategyCard"></div>
+    <div class="task"><div class="main" id="obsTask"></div></div>
+  </div>
+
+  <button class="btn primary" onclick="showScreen('start')">开打<small>30 秒看完：昨天一句话、今天重点、观察任务</small></button>
+  <div class="grid" style="margin-top:10px">
+    <button class="btn" onclick="showScreen('hand')">记一手<small>先保存事实，赛后再分析</small></button>
+    <button class="btn" onclick="showScreen('player')">记一个人<small>记录倾向、证据与置信度</small></button>
+    <button class="btn" onclick="showScreen('review')">复盘<small>先锁定你的思路，再给 GTO / exploit 分析</small></button>
+    <button class="btn" onclick="showScreen('finish')">收工<small>2 分钟完成今日总结</small></button>
+  </div>
+
+  <div class="counts">
+    <div class="pill"><b id="handCount">0</b><span>待复盘手牌</span></div>
+    <div class="pill"><b id="playerCount">0</b><span>玩家观察</span></div>
+    <div class="pill"><b id="sessionCount">0</b><span>Session</span></div>
+  </div>
+
+  <div class="card">
+    <h2>最近记录</h2>
+    <div id="recent"></div>
+  </div>
+  <button class="ghost" onclick="showScreen('settings')">调整策略卡 / 今日观察任务</button>
+  <div class="footer">V0.2 只验证使用闭环。数据保存在本机浏览器。</div>
+</section>
+
+<section id="start" class="screen">
+  <button class="back" onclick="showScreen('home')">← 返回</button>
+  <div class="header"><h1>开打</h1></div>
+  <div class="card brief">
+    <p><strong>昨天一句话</strong><br><span id="startYesterday"></span></p>
+    <p><strong>今天 Hero 目标</strong><br><span id="startHero"></span></p>
+    <p><strong>今天牌池策略</strong><br><span id="startPool"></span></p>
+    <p><strong>今天观察任务</strong><br><span id="startObs"></span></p>
+  </div>
+  <button class="save" onclick="stamp('已开打');showScreen('home')">我知道了，开始</button>
+</section>
+
+<section id="hand" class="screen">
+  <button class="back" onclick="showScreen('home')">← 返回</button>
+  <div class="header"><h1>记一手</h1></div>
+  <div class="card">
+    <label>一句话描述</label>
+    <textarea id="handText" placeholder="例：3/6，BTN vs BB，180bb。River 对手 1.5x pot，我 bluff-catch 跟了，感觉可能过松。"></textarea>
+    <label>对手（可选）</label><input id="handPlayer" placeholder="老王 / 玩家A" />
+    <label>为什么值得复盘（可选）</label><input id="handWhy" placeholder="例：大尺度、深筹、判断拿不准" />
+    <button class="save" onclick="saveHand()">保存，赛后再复盘</button>
+  </div>
+</section>
+
+<section id="player" class="screen">
+  <button class="back" onclick="showScreen('home')">← 返回</button>
+  <div class="header"><h1>记一个人</h1></div>
+  <div class="card">
+    <label>玩家</label><input id="pName" placeholder="老王" />
+    <label>刚观察到什么</label><textarea id="pObs" placeholder="例：River 150% pot，showdown nuts；今天第二次大尺度都是强价值。"></textarea>
+    <label>证据强度</label>
+    <select id="pConf"><option>低：1-2次观察</option><option>中：重复出现，有部分 showdown</option><option>高：大量重复样本</option></select>
+    <button class="save" onclick="savePlayer()">保存观察，不直接定性</button>
+  </div>
+</section>
+
+<section id="review" class="screen">
+  <button class="back" onclick="showScreen('home')">← 返回</button>
+  <div class="header"><h1>复盘</h1></div>
+  <div class="card">
+    <div class="sub">原则：先锁定你的当时思路，再进入 AI 分析。V0.2 先保存复盘输入，V0.3 再接模型。</div>
+    <label>牌局过程</label><textarea id="rHand" placeholder="把牌局过程写在这里。"></textarea>
+    <label>你当时为什么这么打？</label><textarea id="rThink" placeholder="对方有哪些 value？哪些 bluff？你认为他的范围是什么？"></textarea>
+    <button class="save" onclick="saveReview()">锁定我的思路</button>
+    <button class="ghost" onclick="alert('正式 AI 版输出顺序：GTO Baseline → Pool Exploit → Player Exploit → Hero Leak → 一句话策略 → 下一场观察任务。')">查看未来 AI 分析结构</button>
+  </div>
+</section>
+
+<section id="finish" class="screen">
+  <button class="back" onclick="showScreen('home')">← 返回</button>
+  <div class="header"><h1>收工</h1></div>
+  <div class="card">
+    <label>今天打了多久</label><input id="fTime" placeholder="4.5 小时" />
+    <label>结果</label><input id="fResult" placeholder="+12000 / -5000" />
+    <label>今天最值得记住的一件事</label><textarea id="fNote" placeholder="例：两个 River hero call 都缺少足够 bluff 组合支持。"></textarea>
+    <button class="save" onclick="saveSession()">保存今日 Session</button>
+  </div>
+</section>
+
+<section id="settings" class="screen">
+  <button class="back" onclick="showScreen('home')">← 返回</button>
+  <div class="header"><h1>策略设置</h1></div>
+  <div class="card">
+    <label>昨天一句话</label><input id="sYesterday">
+    <label>Hero 当前重点</label><input id="sHero">
+    <label>Pool 当前重点</label><input id="sPool">
+    <label>今日观察任务</label><input id="sObs">
+    <label>策略卡第 1 条</label><input id="s1">
+    <label>策略卡第 2 条</label><input id="s2">
+    <label>策略卡第 3 条</label><input id="s3">
+    <button class="save" onclick="saveSettings()">保存策略卡</button>
+  </div>
+</section>
+</div>
+
+<script>
+const KEY='poker_assistant_v02';
+const DEFAULT={
+ hands:[],players:[],sessions:[],reviews:[],events:[],
+ settings:{
+   yesterday:'被动玩家突然极化，不需要主动替他寻找 bluff。',
+   hero:'遇到 River bluff-catch，先列 value / bluff，再决定是否继续。',
+   pool:'以 GTO 为基准，对目前 pool 的 River 大尺度做适度收紧，不做极端偏离。',
+   obs:'记录 River 1.5×Pot 以上的 showdown，尤其是 missed draw 是否进入 bluff range。',
+   strategy:[
+     'Hero Leak：Turn 二枪频率偏低',
+     'Pool：River 大尺度总体偏价值',
+     '熟人局：不因“了解对手”而自动扩大 hero-call'
+   ]
+ }
+};
+let data;
+try { data=JSON.parse(localStorage.getItem(KEY)) || structuredClone(DEFAULT); }
+catch(e){ data=structuredClone(DEFAULT); }
+if(!data.settings) data.settings=structuredClone(DEFAULT.settings);
+
+function persist(){localStorage.setItem(KEY,JSON.stringify(data));render();}
+function now(){return new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});}
+function showScreen(id){
+ document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ if(id==='settings') fillSettings();
+ window.scrollTo(0,0);
+}
+function stamp(t){data.events.unshift({t,time:now()});data.events=data.events.slice(0,12);persist();}
+function val(id){return document.getElementById(id).value.trim();}
+function saveHand(){
+ if(!val('handText')) return alert('至少写一句话。');
+ data.hands.unshift({text:val('handText'),player:val('handPlayer'),why:val('handWhy'),time:now()});
+ data.events.unshift({t:'记录手牌：'+val('handText').slice(0,28),time:now()});
+ ['handText','handPlayer','handWhy'].forEach(id=>document.getElementById(id).value='');
+ persist();showScreen('home');
+}
+function savePlayer(){
+ if(!val('pName')||!val('pObs')) return alert('玩家和观察都需要填写。');
+ data.players.unshift({name:val('pName'),obs:val('pObs'),conf:document.getElementById('pConf').value,time:now()});
+ data.events.unshift({t:'玩家观察：'+val('pName')+' · '+val('pObs').slice(0,24),time:now()});
+ document.getElementById('pName').value='';document.getElementById('pObs').value='';
+ persist();showScreen('home');
+}
+function saveReview(){
+ if(!val('rHand')||!val('rThink')) return alert('先把牌局和当时推理写下来。');
+ data.reviews.unshift({hand:val('rHand'),think:val('rThink'),time:now()});
+ data.events.unshift({t:'锁定复盘思路：'+val('rHand').slice(0,24),time:now()});
+ document.getElementById('rHand').value='';document.getElementById('rThink').value='';
+ persist();alert('已保存。V0.3 接 AI 后，这里才开始分析。');showScreen('home');
+}
+function saveSession(){
+ if(!val('fTime')&&!val('fResult')&&!val('fNote')) return alert('至少填写一项。');
+ data.sessions.unshift({duration:val('fTime'),result:val('fResult'),note:val('fNote'),time:now()});
+ data.events.unshift({t:'收工：'+(val('fResult')||'已记录')+(val('fNote')?' · '+val('fNote').slice(0,22):''),time:now()});
+ if(val('fNote')) data.settings.yesterday=val('fNote');
+ ['fTime','fResult','fNote'].forEach(id=>document.getElementById(id).value='');
+ persist();showScreen('home');
+}
+function fillSettings(){
+ const s=data.settings;
+ document.getElementById('sYesterday').value=s.yesterday||'';
+ document.getElementById('sHero').value=s.hero||'';
+ document.getElementById('sPool').value=s.pool||'';
+ document.getElementById('sObs').value=s.obs||'';
+ [1,2,3].forEach((n,i)=>document.getElementById('s'+n).value=s.strategy[i]||'');
+}
+function saveSettings(){
+ data.settings={
+  yesterday:val('sYesterday'), hero:val('sHero'), pool:val('sPool'), obs:val('sObs'),
+  strategy:[val('s1'),val('s2'),val('s3')].filter(Boolean)
+ };
+ stamp('更新了当前策略卡');showScreen('home');
+}
+function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+function render(){
+ const s=data.settings;
+ document.getElementById('strategyCard').innerHTML=(s.strategy||[]).map((x,i)=>`<div class="row"><div class="num">${i+1}</div><div class="main">${esc(x)}</div></div>`).join('');
+ document.getElementById('obsTask').textContent='今日观察任务：'+(s.obs||'未设置');
+ document.getElementById('startYesterday').textContent=s.yesterday||'未设置';
+ document.getElementById('startHero').textContent=s.hero||'未设置';
+ document.getElementById('startPool').textContent=s.pool||'未设置';
+ document.getElementById('startObs').textContent=s.obs||'未设置';
+ document.getElementById('handCount').textContent=data.hands.length;
+ document.getElementById('playerCount').textContent=data.players.length;
+ document.getElementById('sessionCount').textContent=data.sessions.length;
+ const r=document.getElementById('recent');
+ r.innerHTML=data.events.length?data.events.slice(0,6).map(x=>`<div class="item"><div class="t">${esc(x.t)}</div><div class="m">${esc(x.time)}</div></div>`).join(''):'<div class="sub">还没有记录。先从「开打」开始。</div>';
+}
+render();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+</script>
+</body>
+</html>
